@@ -1,40 +1,39 @@
 const http = require("http");
+const fs = require("fs");
 
-const server = http.createServer((req,res) => {
+const server = http.createServer((req, res) => {
   const url = req.url;
+  const method = req.method;
 
-  if(url === '/'){
-      res.setHeader('Content-Type', 'text/html');
-      res.write('<html>');
-      res.write('<head><title>My first page</title></head>');
-      res.write('<body><h1>This is my first node js page</h1></body>');
-      res.write('</body>');
-      res.end();
+  if (url === "/") {
+    fs.readFile("message.txt", { encoding: "utf8" }, (err, data) => {
+      console.log(data)
+      if (err) {
+        console.log(err);
+      }
+      res.write("<html>");
+      res.write("<head><title>Enter message</title></head>");
+      res.write(
+        `<body>${data}<form action='/message' method='POST'><input type='text' name='message'/><button type='submit'>Send</button></form></body>`
+      );
+      res.write("</html>");
+      return res.end();
+    });
   }
-  else if(url === '/home'){
-    res.setHeader('Content-Type', 'text/html');
-      res.write('<html>');
-      res.write('<head><title>My first page</title></head>');
-      res.write('<body><h1>Welcome home</h1></body>');
-      res.write('</body>');
-      res.end();
+  if (url === "/message" && method === "POST") {
+    const body = [];
+    req.on("data", (chunk) => {
+      body.push(chunk);
+    });
+    return req.on("end", () => {
+      const parsedBody = Buffer.concat(body).toString();
+      const message = parsedBody.split("=")[1];
+      fs.writeFile("message.txt", message, (err) => {
+        res.statusCode = 302;
+        res.setHeader("Location", "/");
+        return res.end();
+      });
+    });
   }
-  else if(url === '/about'){
-    res.setHeader('Content-Type', 'text/html');
-      res.write('<html>');
-      res.write('<head><title>My first page</title></head>');
-      res.write('<body><h1>Welcome to About Us page</h1></body>');
-      res.write('</body>');
-      res.end();
-  }
-  else if(url === '/node'){
-    res.setHeader('Content-Type', 'text/html');
-      res.write('<html>');
-      res.write('<head><title>My first page</title></head>');
-      res.write('<body><h1>Welcome to my Node Js project</h1></body>');
-      res.write('</body>');
-      res.end();
-  }
-
 });
 server.listen(4000);
